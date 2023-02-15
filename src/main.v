@@ -3,6 +3,9 @@ module main
 import os
 import markdown
 
+const path_src = "files"
+const path_dest = "dist"
+
 struct Cache {
     markdown_files []string
     mut: 
@@ -15,48 +18,33 @@ fn (c &Cache) renders() map[string]string {
         mut mdtext := os.read_file(file) or { panic(err) }
         renders[file] = markdown.to_html(mdtext)
     }
-    // println(renders)
     return renders
 }
 
 fn reset_dist_folder() {
-    dist_path := "./dist/"
-    println('Reset ${dist_path} folder')
-    os.rmdir_all(dist_path) or { println(err) return }
-    os.mkdir(dist_path) or {}
+    println('Reset ./${path_dest}/ folder')
+    if os.is_dir("./${path_dest}/") { os.rmdir_all("./${path_dest}/") or { panic(err) } }
+    os.mkdir("./${path_dest}/") or { panic(err) }
 }
 
 fn build(html string) string {
     return $tmpl('./layout.html')
 }
 
-
 fn (c &Cache) write_files() {
     for k,v in c.markdown_renders {
-        filedest := k.replace(".md", ".html").replace("\/files\/", "\/dist\/")
-        pathdest := os.dir(filedest)
-
-        println(" ")
-        println("filedest ${filedest}")
-        println("pathdest ${pathdest}")
-        println("quoted_path ${os.quoted_path(pathdest)}")
-        println(" ")
-
-        os.mkdir_all(pathdest) or {println(err) return }
-        // os.mkdir_all(filedest) or {println(err) return }
-        os.write_file(filedest, build(v)) or { println(err) return }
+        filedest := k.replace(".md", ".html").replace(path_src, path_dest)
+        os.mkdir_all(os.dir(filedest)) or { println("write_files mkdir_all(): ${err}") return }
+        os.write_file(filedest, build(v)) or { println("write_files write_file(): ${err}") return }
     }
 }
 
 fn main() {
-    
     reset_dist_folder()
-
     mut cache := Cache{
-        markdown_files: os.walk_ext("./files/", ".md")
+        markdown_files: os.walk_ext("./${path_src}/", ".md")
         markdown_renders: {}
     }
     cache.markdown_renders = cache.renders()
-    println(cache)
     cache.write_files()
 }
