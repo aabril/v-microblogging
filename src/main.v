@@ -26,6 +26,11 @@ fn reset_dist_folder() {
     os.mkdir(dist_path) or {}
 }
 
+fn build(html string) string {
+    return $tmpl('./layout.html')
+}
+
+
 fn (c &Cache) write_files() {
     for k,v in c.markdown_renders {
         filedest := k.replace(".md", ".html").replace("\/files\/", "\/dist\/")
@@ -39,7 +44,7 @@ fn (c &Cache) write_files() {
 
         os.mkdir_all(pathdest) or {println(err) return }
         // os.mkdir_all(filedest) or {println(err) return }
-        os.write_file(filedest, v) or { println(err) return }
+        os.write_file(filedest, build(v)) or { println(err) return }
     }
 }
 
